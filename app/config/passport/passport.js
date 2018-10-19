@@ -52,53 +52,35 @@ function(req, email, password, done){
     }
   });
 }));
-    
-  //LOCAL SIGNIN
-  passport.use('local-signin', new LocalStrategy(
-    
-  {
 
+passport.use('local-signin', new LocalStrategy({
   // by default, local strategy uses username and password, we will override with email
   usernameField : 'email',
   passwordField : 'password',
   passReqToCallback : true // allows us to pass back the entire request to the callback
-  },
+},
 
-  function(req, email, password, done) {
+function(req, email, password, done) {
+  const User = user;
+  const isValidPassword = function(userpass,password){
+    return bCrypt.compareSync(password, userpass);
+  }
 
-    var User = user;
-
-    var isValidPassword = function(userpass,password){
-      return bCrypt.compareSync(password, userpass);
+  User.findOne({ where : { email: email}}).then(function (user) {
+    if (!user) {
+      return done(null, false, { message: 'Email does not exist' });
     }
-
-    User.findOne({ where : { email: email}}).then(function (user) {
-
-      if (!user) {
-        return done(null, false, { message: 'Email does not exist' });
-      }
-
-      if (!isValidPassword(user.password,password)) {
-
-        return done(null, false, { message: 'Incorrect password.' });
-
-      }
-
-      var userinfo = user.get();
-
+    if (!isValidPassword(user.password,password)) {
+      return done(null, false, { message: 'Incorrect password.' });
+    }
+    const userinfo = user.get();
       return done(null,userinfo);
-
-    }).catch(function(err){
-
-      console.log("Error:",err);
-
+    }).catch(function(err){console.log("Error:",err);
       return done(null, false, { message: 'Something went wrong with your Signin' });
+  });
 
+}
+));
 
-    });
-
-  }
-  ));
-
-  }
+}
 
